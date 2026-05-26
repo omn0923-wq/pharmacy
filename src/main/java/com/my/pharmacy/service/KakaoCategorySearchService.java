@@ -2,13 +2,11 @@ package com.my.pharmacy.service;
 
 import com.my.pharmacy.dto.KakaoApiResponseDto;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
-import org.springframework.util.ObjectUtils;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -16,35 +14,37 @@ import java.net.URI;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
-public class KakaoAddressSearchService {
-    //    postman처럼 api 요청에 필요한 값을 세팅한 후 호출해 주는
-    //    결과를 DTO에 담아주는 역할.
+public class KakaoCategorySearchService {
     private final RestTemplate restTemplate;
-    //    환경 변수에서 ${KAKAO_REST_API_KEY} 값을 가져와서 변수 저장
-    //    yml 파일에 있는 계층값을 순서대로 .으로 연결해서 표현.
+
     @Value("${kakao.rest.api.key}")
     private String kakaoRestApiKey;
 
-    //    https://dapi.kakao.com/v2/local/search/address?query=중부대로 100
-    //    주소 검색에 필요한 기초 URL을 상수로 선언
-    private static final String KAKAO_LOCAL_URL = "https://dapi.kakao.com/v2/local/search/address";
+    private static final String KAKAO_CATEGORY_URL = "https://dapi.kakao.com/v2/local/search/category";
+    // 카테고리 상수(약국)
+    // private static final String CATEGORY = "PM9";
+    // 카테고리 상수(카페)
+    private static final String CATEGORY = "CE7";
 
-    public KakaoApiResponseDto requestAddressSearch(String address) {
-        log.info("Kakao-Api-Key: " + kakaoRestApiKey);
-        log.info("address: " + address);
-//        넘어오는 주솟값이 비었는지 확인
-        if (ObjectUtils.isEmpty(address)) return null;
-
-//        1. URL 만들기
-//        UriBuilder: URL 구성에 필요한 값을 붙여서 완성형 URL을 생성.
+    // 위도: latitude, 경도: longitude를 인자로 받아서 카테고리 검색
+    public KakaoApiResponseDto resultCategorySearch(double latitude, double longitude) {
         UriComponentsBuilder uriBuilder = UriComponentsBuilder
-                .fromUriString(KAKAO_LOCAL_URL);
-        uriBuilder.queryParam("query", address);
+                .fromUriString(KAKAO_CATEGORY_URL);
+//        1. 카테고리
+        uriBuilder.queryParam("category_group_code", CATEGORY);
+//        2. x값, y값
+        uriBuilder.queryParam("x", longitude);
+        uriBuilder.queryParam("y", latitude);
+//        3. 검색 반경
+        uriBuilder.queryParam("radius", 1000);
+//        4. 검색 사이즈-나중에 처리
+//        5. 정렬 처리
+        uriBuilder.queryParam("sort", "distance");
+
+        uriBuilder.queryParam("query", CATEGORY);
 //        url에 포함된 한글을 UTF-8 인코딩 처리
         URI uri = uriBuilder.build().encode().toUri();
-        log.info("uri: " + uri);
-//        헤더 작업
+        //        헤더 작업
         HttpHeaders headers = new HttpHeaders();
         headers.set(HttpHeaders.AUTHORIZATION, "KakaoAK " + kakaoRestApiKey);
         HttpEntity<Object> httpEntity = new HttpEntity<>(headers);
